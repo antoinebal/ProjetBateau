@@ -1,6 +1,14 @@
 #include "stm32f10x.h"
 #include "math.h"
-int x,y,tangue;
+#include <stdio.h>
+#include <stdlib.h>
+#define limite_droite_x 1350
+#define limite_droite_y 1550
+#define limite_gauche_x 980
+#define limite_gauche_y 1510
+int x,y;
+float tangent;
+
 /*fonction executée quand l'exception est levée
  (handler) */
  
@@ -9,8 +17,37 @@ int x,y,tangue;
 	//remettre le compteur à 0
 	TIM3->CNT = 0;
 }
+void servo()
+{
+	
+	// paramétrage timer 1
+	RCC->APB2ENR |= RCC_APB2ENR_TIM1EN ; 
+	
+	//on congig PA.8 en alternate output push pull
+	GPIOA->CRH |= GPIO_CRH_MODE8_0;
+	GPIOA->CRH &= (~GPIO_CRH_MODE8_1);
+	GPIOA->CRH &= (~GPIO_CRH_CNF8_0);
+	GPIOA->CRH |= GPIO_CRH_CNF8_1;
+	
+	TIM1->ARR= 47999;  
+	TIM1->PSC= 29; 
+	
+	// Paramétrage PWM
+	TIM1->CCMR1 &= ~TIM_CCMR1_OC1M_0;
+	TIM1->CCMR1 |= TIM_CCMR1_OC1M_1| TIM_CCMR1_OC1M_2;
+	TIM1->CCER |= TIM_CCER_CC1E; // sortie sur channel 1
+	
 
+	
+	// démarrage timer 1
+	TIM1->CR1 = TIM_CR1_CEN ;
+	
+	
+	
+	// traitement direction
+	TIM1->CCR1= 4800; //pour un état haut de 2 ms = 10  % de l'ARR = 48000, et 2 = 10% de la période de 20 ms 
 
+}
 
 
 void girouette() 
@@ -133,6 +170,13 @@ int convert_single(char channel){
     return ADC1->DR & ~((0x0F) << 12); // retour de la conversion
 }
 
+
+
+
+
+
+
+
 int main (void)
 {	
 
@@ -144,6 +188,6 @@ int main (void)
 	{	
 		x = convert_single(10); // conversion
     y = convert_single(11); // conversion   
-		tangue = sin(x)/cos(y);
+		tangent = (float) x/(float) y;
 	}
 }
